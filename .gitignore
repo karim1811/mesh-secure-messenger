@@ -1,0 +1,7 @@
+# Clés privées et inbox (POC local) — NEVER commit en vrai usage
+id_*.json
+inbox_*.json
+pub_*.json
+__pycache__/
+*.pyc
+.DS_Store
