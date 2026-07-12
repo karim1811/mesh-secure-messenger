@@ -2,6 +2,8 @@
 id_*.json
 inbox_*.json
 pub_*.json
+peers.json
+server_relay.log
 __pycache__/
 *.pyc
 .DS_Store
