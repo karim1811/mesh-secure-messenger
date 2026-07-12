@@ -22,9 +22,12 @@ import time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from crypto_utils import (generate_identity, pubkey_bundle, load_remote_pubkeys,
                           derive_session_key, encrypt_message, decrypt_message)
-from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
+from cryptography.fernet import Fernet
+import base64, getpass
 
 HOST = "127.0.0.1"
 PORT = 9001
@@ -164,6 +167,13 @@ def main():
 
 
 # --- stockage POC des cles privees (fichier local, clair -> remplacer par passphrase) ---
+def _derive_key(passphrase: str, salt: bytes) -> bytes:
+    """scrypt -> 32 octets -> cle Fernet (URL-safe base64)."""
+    kdf = Scrypt(salt=salt, length=32, n=2 ** 14, r=8, p=1)
+    return base64.urlsafe_b64encode(kdf.derive(passphrase.encode("utf-8")))
+
+
+# --- stockage SECURISE des cles privees (chiffrees par passphrase) ---
 def store_identity(me):
     ident = generate_identity(me)
     raw = {
@@ -174,11 +184,19 @@ def store_identity(me):
             serialization.Encoding.Raw, serialization.PrivateFormat.Raw,
             serialization.NoEncryption()).hex(),
     }
-    json.dump(raw, open(path(f"id_{me}.json"), "w"))
+    passphrase = getpass.getpass(f"Passphrase pour chiffrer la cle de {me}: ")
+    salt = os.urandom(16)
+    key = _derive_key(passphrase, salt)
+    token = Fernet(key).encrypt(json.dumps(raw).encode("utf-8"))
+    json.dump({"salt": salt.hex(), "v": 1, "data": token.decode("ascii")},
+              open(path(f"id_{me}.json"), "w"))
 
 
 def load_identity(me):
-    raw = json.load(open(path(f"id_{me}.json")))
+    blob = json.load(open(path(f"id_{me}.json")))
+    passphrase = getpass.getpass(f"Passphrase pour {me}: ")
+    key = _derive_key(passphrase, bytes.fromhex(blob["salt"]))
+    raw = json.loads(Fernet(key).decrypt(blob["data"].encode("ascii")))
     enc_priv = X25519PrivateKey.from_private_bytes(bytes.fromhex(raw["enc_priv"]))
     sig_priv = Ed25519PrivateKey.from_private_bytes(bytes.fromhex(raw["sig_priv"]))
     return {
