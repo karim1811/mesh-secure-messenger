@@ -12,28 +12,38 @@ Communication libre et chiffree, sans infrastructure centrale controllable.
 - AES-256-GCM : chiffrement des messages + integrite
 - Ed25519 : signature (anti-usurpation / MITM)
 
-## Etat (etape 1)
+## Etat
 - [x] Chiffrement E2E fonctionnel (teste: ECDH, decryptage, anti-MITM)
-- [x] Client CLI local (transport = fichiers inbox, POC)
-- [ ] Transport socket localhost
+- [x] Transport fichier (POC etape 1)
+- [x] Transport socket localhost via relais local (etape 2): `server.py` + `client.py`
 - [ ] Transport .onion (Tor hidden service)
 - [ ] Transport Meshtastic (noeud ESP32 LoRa) -- quand carte dispo
 - [ ] Wallet crypto non-custodial (web3.py) -- etape ulterieure
 
-## Lancer (test local)
-Deux fenetres terminal dans ce dossier:
+## Lancer (etape 2 - socket localhost)
+3 fenetres terminal dans ce dossier:
 ```
-python client.py alice
-python client.py bob
+python server.py            # relais localhost 127.0.0.1:9001
+python client.py alice      # client 1 (localhost)
+python client.py bob        # client 2 (localhost)
 ```
-Au 1er lancement chaque user publie sa cle dans pub_<nom>.json.
-Pose les deux fichiers pub dans le dossier, relance: la session E2E s'active.
+
+Pour tester avec un AUTRE utilisateur sur le meme reseau (LAN):
+- l'autre lance `python server.py` sur sa machine (ou vous partagez un relais)
+- il faut que le client vise l'IP de la machine qui heberge le relais:
+```
+python client.py bob 192.168.1.42     # host = IP du relais, port par defaut 9001
+python client.py bob 192.168.1.42 9002  # host + port custom
+```
+Note: le relais localhost est un POC. Pour un vrai usage entre machines, le
+relais doit tourner sur une machine jointe (LAN ou VPS) et les ports ouverts.
+Le chiffrement reste identique: le relais ne voit que des blobs illisibles.
 
 ## SECURITE (a durcir avant usage reel)
 - Les cles privees sont stockees en clair dans id_<nom>.json (POC uniquement).
   En prod: chiffrer le fichier avec un mot de passe (scrypt/argon2).
-- Le transport fichier est un POC: un tiers qui lit le dossier lit les blobs
-  (illisibles sans la cle privee, mais metadata visible). Passer au socket/onion.
+- Le transport socket localhost est un POC local: un tiers sur la meme machine
+  peut sniffer le localhost. Passer au transport .onion + chiffrement déjà OK.
 
 ## Legal
 Tor, chiffrement et consultation de contenus legaux sont legaux en France/EU.
