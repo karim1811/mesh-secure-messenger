@@ -1,0 +1,22 @@
+# torrc.example - Config pour exposer le relais Mesh en service onion (Tor)
+#
+# Copie ce fichier en "torrc" et lance Tor avec :
+#   tor -f torrc
+#
+# Le relais (server.py) tourne en LOCAL sur 127.0.0.1:9001.
+# Tor cree un hostname .onion et redirige le trafic entrant vers ce port local.
+# Le relais ne voit QUE des blobs chiffres : Tor ne peut pas lire le contenu.
+
+# --- SOCKS proxy (optionnel, pour que les clients passent par Tor) ---
+SOCKSPort 9050
+
+# --- Logs ---
+Log notice stdout
+
+# --- Hidden service : expose 127.0.0.1:9001 en .onion ---
+# Le nom d'hote (.onion) est genere automatiquement dans HiddenServiceDir/hostname
+HiddenServiceDir C:/Users/karim/Desktop/mesh-secure-messenger/hidden_service
+HiddenServicePort 9001 127.0.0.1:9001
+
+# Note : sur Linux/Mac, remplace le chemin HiddenServiceDir par un dossier
+# accessible en ecriture, ex: ./hidden_service

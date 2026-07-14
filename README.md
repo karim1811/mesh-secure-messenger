@@ -16,7 +16,8 @@ Communication libre et chiffree, sans infrastructure centrale controllable.
 - [x] Chiffrement E2E fonctionnel (teste: ECDH, decryptage, anti-MITM)
 - [x] Transport fichier (POC etape 1)
 - [x] Transport socket localhost via relais local (etape 2): `server.py` + `client.py`
-- [ ] Transport .onion (Tor hidden service)
+- [x] Transport .onion (Tor hidden service): client route via SOCKS Tor,
+      config `torrc.example`, doc `README_TOR.md`
 - [ ] Transport Meshtastic (noeud ESP32 LoRa) -- quand carte dispo
 - [ ] Wallet crypto non-custodial (web3.py) -- etape ulterieure
 

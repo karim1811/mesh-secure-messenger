@@ -34,8 +34,13 @@ from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
 from cryptography.fernet import Fernet
 import base64, getpass
 
+import socks as pysocks   # pysocks : proxy SOCKS5 pour joindre les .onion via Tor
+
 HOST = "127.0.0.1"
 PORT = 9001
+# Proxy SOCKS de Tor. 9050 = Tor (Expert Bundle / service), 9150 = Tor Browser.
+TOR_PROXY_HOST = "127.0.0.1"
+TOR_PROXY_PORT = 9050
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 
@@ -105,13 +110,39 @@ def save_peers(peers: dict):
     json.dump(peers, open(path("peers.json"), "w"))
 
 
+def make_socket(host, port, tor_port=TOR_PROXY_PORT):
+    """Cree le socket de transport.
+
+    - Si l'hote se termine par .onion : on passe par le proxy SOCKS5 de Tor
+      (le DNS est resolu DANS Tor, impossible a faire en clair depuis l'exterieur).
+    - Sinon : socket TCP classique (localhost ou LAN).
+    """
+    if host.endswith(".onion"):
+        s = pysocks.socksocket()
+        s.set_proxy(pysocks.SOCKS5, TOR_PROXY_HOST, tor_port)
+        s.connect((host, port))
+        return s
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect((host, port))
+    return s
+
+
 def main():
     if len(sys.argv) < 2:
-        print("Usage: python client.py <nom> [host] [port]")
+        print("Usage: python client.py <nom> [host] [port] [--tor-port 9050]")
+        print("  host peut etre un .onion -> connexion via Tor SOCKS automatique")
         sys.exit(1)
     me = sys.argv[1]
-    host = sys.argv[2] if len(sys.argv) > 2 else HOST
-    port = int(sys.argv[3]) if len(sys.argv) > 3 else PORT
+    # parse args positionnels + option --tor-port
+    positional = [a for a in sys.argv[2:] if not a.startswith("--")]
+    opts = sys.argv[2:]
+    tor_port = TOR_PROXY_PORT
+    if "--tor-port" in opts:
+        i = opts.index("--tor-port")
+        if i + 1 < len(opts):
+            tor_port = int(opts[i + 1])
+    host = positional[0] if len(positional) > 0 else HOST
+    port = int(positional[1]) if len(positional) > 1 else PORT
     idfile = path(f"id_{me}.json")
 
     if not os.path.exists(idfile):
@@ -119,9 +150,13 @@ def main():
         store_identity(me)
     ident = load_identity(me)
 
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.connect((host, port))
-    print(f"[+] Connecte au relais {host}:{port}")
+    # --- connexion au relais (localhost direct OU .onion via Tor) ---
+    via_tor = host.endswith(".onion")
+    sock = make_socket(host, port, tor_port=tor_port)
+    if via_tor:
+        print(f"[+] Connecte au relais Tor .onion {host}:{port} (via SOCKS {TOR_PROXY_HOST}:{tor_port})")
+    else:
+        print(f"[+] Connecte au relais {host}:{port}")
 
     # publie notre bundle (fini les fichiers)
     bundle = pubkey_bundle(ident)
