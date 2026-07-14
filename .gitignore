@@ -7,3 +7,7 @@ server_relay.log
 __pycache__/
 *.pyc
 .DS_Store
+
+# Environnement virtuel du projet (libs: meshtastic, web3, etc.)
+.venv/
+venv/

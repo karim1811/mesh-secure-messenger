@@ -1,0 +1,8 @@
+# requirements.txt - deps Mesh Secure Messenger (etapes 4 & 5)
+# Install:  uv venv .venv && . .venv/Scripts/activate && uv pip install -r requirements.txt
+cryptography>=42.0.0
+eth-account>=0.13.0
+eth-utils>=5.0.0
+web3>=7.0.0
+meshtastic>=2.5.0
+pyserial>=3.5

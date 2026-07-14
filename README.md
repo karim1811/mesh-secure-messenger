@@ -18,8 +18,10 @@ Communication libre et chiffree, sans infrastructure centrale controllable.
 - [x] Transport socket localhost via relais local (etape 2): `server.py` + `client.py`
 - [x] Transport .onion (Tor hidden service): client route via SOCKS Tor,
       config `torrc.example`, doc `README_TOR.md`
-- [ ] Transport Meshtastic (noeud ESP32 LoRa) -- quand carte dispo
-- [ ] Wallet crypto non-custodial (web3.py) -- etape ulterieure
+- [x] Clés privees chiffrees par passphrase (scrypt + Fernet) + multi-pair
+- [x] Wallet crypto non-custodial (etape 4): `wallet.py`, doc `README_WALLET.md`
+- [x] Transport Meshtastic / LoRa (etape 5): `mesh_transport.py`, doc `README_MESH.md`
+      (fragmentation + mode SIM; hardware requis pour le vrai mesh radio)
 
 ## Lancer (etape 2 - socket localhost)
 3 fenetres terminal dans ce dossier:
